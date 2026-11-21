@@ -20,3 +20,11 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+    # Callers in other compose projects on this host join this network and
+    # reach the service as http://notify-service:8000.
+    networks:
+      - notify
+
+networks:
+  notify:
+    name: notify

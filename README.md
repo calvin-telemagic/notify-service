@@ -121,6 +121,11 @@ See `.env.example`: `API_KEYS`, `EGRESS_ALLOWED_HOSTS`, `ALLOW_INSECURE_SMTP`, `
 
 ## Run and test
 
+Callers on the same host reach the service in either of two ways:
+
+- **Containers** join the `notify` Docker network and use `http://notify-service:8000`. SecureVoice's relay does this through pqtutela's `docker-compose.notify.yml`.
+- **Host processes** use `http://127.0.0.1:8010`.
+
 ```bash
 cp .env.example .env                    # set API_KEYS and EGRESS_ALLOWED_HOSTS
 docker compose up -d --build            # the image build runs the tests first
