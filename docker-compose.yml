@@ -1,0 +1,22 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "60m"
+    max-file: "1"
+
+services:
+  notify-service:
+    image: gitlab.persistenttelecom.com:5050/telemagic/utilities/notify-service:${VERSION:-latest}
+    build:
+      context: .
+    container_name: notify-service
+    logging: *default-logging
+    restart: unless-stopped
+    # Internal only: bind to the host's private address, never a public one.
+    ports:
+      - "${NOTIFY_BIND:-127.0.0.1}:${NOTIFY_PORT:-8010}:8000"
+    env_file:
+      - .env
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
