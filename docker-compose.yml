@@ -6,7 +6,7 @@ x-logging: &default-logging
 
 services:
   notify-service:
-    image: gitlab.persistenttelecom.com:5050/telemagic/utilities/notify-service:${VERSION:-latest}
+    image: ghcr.io/calvin-telemagic/notify-service:${VERSION:-latest}
     build:
       context: .
     container_name: notify-service
