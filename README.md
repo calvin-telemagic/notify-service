@@ -60,7 +60,7 @@ Every call except `/healthz` and the receipt route needs `Authorization: Bearer 
  "sensitive": true, "reference": "signup-abc"}
 ```
 
-- **`from`**: optional, and must be one of the config's `from_numbers`. Without it, one is picked at random.
+- **`from`**: optional, and must be one of the config's `from_numbers`. Without it, one is picked at random. A config with `"from_any": true` (Jasmin or Inteliquent) takes any `from` and needs one on every send; it's for a client that assigns its own numbers, such as PQTutela's per-account DIDs, and checks them itself. Its `from_numbers` can then be left out.
 - **`media_urls`**: optional, for MMS. Needs an Inteliquent config.
 - **`sensitive`**: the body isn't kept (see below).
 - **`reference`**: your own id, for lookups.

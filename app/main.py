@@ -172,7 +172,10 @@ def _dlr_url(message_id: uuid.UUID) -> str | None:
 @app.post("/v1/sms", response_model=Accepted)
 async def send_sms(request: Request, req: SmsRequest, client: str = Depends(client_id)) -> Accepted:
     cfg = await load_config(client, req.config, "sms")
-    if req.from_ is not None and req.from_ not in cfg.from_numbers:
+    if cfg.from_any:
+        if req.from_ is None:
+            raise ConfigError(f"config {req.config!r} is from_any: every send needs a from number")
+    elif req.from_ is not None and req.from_ not in cfg.from_numbers:
         raise ConfigError(f"{req.from_} isn't one of config {req.config!r}'s from_numbers")
     if req.media_urls and not isinstance(cfg, InteliquentConfig):
         raise ConfigError("media_urls (MMS) needs an Inteliquent config")

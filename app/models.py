@@ -62,23 +62,37 @@ OneLine = Annotated[str, AfterValidator(_one_line)]
 
 # ── stored provider configs ──────────────────────────────────────────────────
 
-_Numbers = Annotated[list[Annotated[str, Field(pattern=PHONE)]], Field(min_length=1, max_length=100)]
+_Numbers = Annotated[list[Annotated[str, Field(pattern=PHONE)]], Field(default_factory=list, max_length=100)]
 
 
-class JasminConfig(_Strict):
+class _SmsConfig(_Strict):
+    """from_numbers: the numbers a send may come from (one at random when it
+    doesn't say). from_any: the client picks the number on every send, any
+    number at all -- for a client that hands out its own numbers (PQTutela
+    gives each account a DID) and checks them itself."""
+
+    from_numbers: _Numbers
+    from_any: bool = False
+
+    @model_validator(mode="after")
+    def _has_numbers(self):
+        if not self.from_numbers and not self.from_any:
+            raise ValueError("from_numbers is required unless from_any is true")
+        return self
+
+
+class JasminConfig(_SmsConfig):
     provider: Literal["jasmin"]
     base_url: HttpUrl = Field(max_length=512, description="Jasmin's HTTP API, e.g. http://jasmin:1401")
     username: SecretStr
     password: SecretStr
-    from_numbers: _Numbers
     dlr_level: Literal[2, 3] = 2
 
 
-class InteliquentConfig(_Strict):
+class InteliquentConfig(_SmsConfig):
     provider: Literal["inteliquent"]
     token: SecretStr
     base_url: HttpUrl = Field(default="https://messagebroker.inteliquent.com/msgbroker/rest/", max_length=512)
-    from_numbers: _Numbers
 
 
 class GraphConfig(_Strict):
@@ -148,7 +162,7 @@ class _SendBase(_Strict):
 class SmsRequest(_SendBase):
     to: str = Field(pattern=PHONE)
     from_: str | None = Field(default=None, alias="from", pattern=PHONE,
-                              description="One of the config's from_numbers; default: one at random")
+                              description="One of the config's from_numbers (any number if from_any); default: one at random")
     body: str | None = Field(default=None, min_length=1, max_length=MAX_SMS_CHARS)
     media_urls: list[Annotated[str, Field(max_length=2048)]] = Field(default_factory=list, max_length=10,
                                                                     description="Inteliquent only (MMS)")

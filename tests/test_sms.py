@@ -1,4 +1,5 @@
 import json
+import pytest
 
 import httpx
 import respx
@@ -157,3 +158,23 @@ def test_mms_needs_inteliquent(h):
     r = h.http.post("/v1/sms", json={**SMS, "media_urls": ["https://x/y.png"]})
     assert r.status_code == 400 and "Inteliquent" in r.json()["detail"]
     assert h.http.post("/v1/sms", json={**MMS, "body": None}).status_code == 422
+
+
+@respx.mock
+def test_from_any_takes_any_number_and_needs_one(h):
+    h.set_config("sv", "dids", {"provider": "jasmin", "base_url": "http://jasmin.internal:1401",
+                                "username": "tm", "password": "p", "from_any": True})
+    route = respx.get(SEND).respond(200, text='Success "x"')
+    assert h.http.post("/v1/sms", json={**SMS, "config": "dids", "from": "+15550001111"}).status_code == 200
+    assert dict(route.calls.last.request.url.params)["from"] == "+15550001111"
+    r = h.http.post("/v1/sms", json={**SMS, "config": "dids"})
+    assert r.status_code == 400 and "from_any" in r.json()["detail"]
+
+
+def test_sms_config_needs_numbers_unless_from_any():
+    import pydantic
+    from app.models import JasminConfig
+    base = {"provider": "jasmin", "base_url": "http://j:1401", "username": "u", "password": "p"}
+    with pytest.raises(pydantic.ValidationError):
+        JasminConfig(**base)
+    assert JasminConfig(**base, from_any=True).from_numbers == []
