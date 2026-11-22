@@ -8,30 +8,24 @@ from urllib.parse import urljoin
 
 import httpx
 
-from ..egress import check_url
 from ..errors import ProviderAuthFailed, ProviderRejected, ProviderUnavailable
-from ..models import InteliquentCredentials, InteliquentSms
-
-DEFAULT_BASE_URL = InteliquentCredentials.model_fields["base_url"].default
+from ..models import InteliquentConfig
 
 
-async def send(client: httpx.AsyncClient, req: InteliquentSms) -> str | None:
-    creds = req.credentials
-    base_url = creds.base_url if creds.base_url.endswith("/") else creds.base_url + "/"
-    if base_url != DEFAULT_BASE_URL:
-        check_url(base_url)
-
-    payload: dict = {"from": req.from_.lstrip("+"), "to": [req.to.lstrip("+")]}
-    if req.body:
-        payload["text"] = req.body
-    if req.media_urls:
-        payload["mediaUrls"] = req.media_urls
+async def send(client: httpx.AsyncClient, cfg: InteliquentConfig, *, sender: str, to: str,
+               body: str | None, media_urls: list[str]) -> str | None:
+    base_url = cfg.base_url if cfg.base_url.endswith("/") else cfg.base_url + "/"
+    payload: dict = {"from": sender.lstrip("+"), "to": [to.lstrip("+")]}
+    if body:
+        payload["text"] = body
+    if media_urls:
+        payload["mediaUrls"] = media_urls
 
     try:
         response = await client.post(
             urljoin(base_url, "publishMessages"),
             json=payload,
-            headers={"Authorization": f"Bearer {creds.token.get_secret_value()}"},
+            headers={"Authorization": f"Bearer {cfg.token.get_secret_value()}"},
         )
     except httpx.HTTPError as exc:
         raise ProviderUnavailable(f"Inteliquent unreachable: {type(exc).__name__}") from None

@@ -11,15 +11,18 @@ the messaging hub and opensips.cfg's gsm_utf.py do.
 
 The username and password ride in the query string (Jasmin's API); the
 service's httpx logger is held at WARNING so the URL is never logged.
+
+Delivery receipts: with a dlr_url, Jasmin POSTs the receipt there (level 2:
+the terminal status from the carrier); app/main.py's /dlr/jasmin route
+records it. STATUS_MAP is messaging's services/dlr_status.py.
 """
 
 import re
 
 import httpx
 
-from ..egress import check_url
 from ..errors import ProviderAuthFailed, ProviderRejected, ProviderUnavailable
-from ..models import JasminSms
+from ..models import JasminConfig
 
 _UCS2_DATA_CODING = 8
 
@@ -45,23 +48,36 @@ def parse_response(text: str) -> tuple[str | None, str | None]:
     return None, f"Unexpected Jasmin response: {text[:200]}"
 
 
-async def send(client: httpx.AsyncClient, req: JasminSms) -> str:
-    creds = req.credentials
-    check_url(creds.base_url)
+STATUS_MAP = {
+    "DELIVRD": "delivered",
+    "UNDELIV": "undeliverable",
+    "REJECTD": "rejected",
+    "EXPIRED": "expired",
+    "FAILED":  "failed",
+    "UNKNOWN": "unknown",
+}
+
+
+def dlr_status(raw: str | None) -> str:
+    return STATUS_MAP.get((raw or "").upper(), "unknown")
+
+
+async def send(client: httpx.AsyncClient, cfg: JasminConfig, *, sender: str, to: str, body: str,
+               dlr_url: str | None) -> str:
     params = {
-        "username": creds.username.get_secret_value(),
-        "password": creds.password.get_secret_value(),
-        "from": req.from_,
-        "to": req.to,
-        **content_params(req.body),
+        "username": cfg.username.get_secret_value(),
+        "password": cfg.password.get_secret_value(),
+        "from": sender,
+        "to": to,
+        **content_params(body),
     }
-    if req.route:
-        params["route"] = req.route
-    if req.dlr_url:
-        params |= {"dlr": "yes", "dlr-url": req.dlr_url, "dlr-level": req.dlr_level, "dlr-method": "POST"}
+    if cfg.route:
+        params["route"] = cfg.route
+    if dlr_url:
+        params |= {"dlr": "yes", "dlr-url": dlr_url, "dlr-level": cfg.dlr_level, "dlr-method": "POST"}
 
     try:
-        response = await client.get(creds.base_url.rstrip("/") + "/send", params=params)
+        response = await client.get(cfg.base_url.rstrip("/") + "/send", params=params)
     except httpx.HTTPError as exc:
         raise ProviderUnavailable(f"Jasmin unreachable: {type(exc).__name__}") from None
 

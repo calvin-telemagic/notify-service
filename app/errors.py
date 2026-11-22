@@ -23,7 +23,7 @@ class ProviderRejected(SendError):
 
 
 class ProviderAuthFailed(SendError):
-    """The provider refused the credentials the caller passed."""
+    """The provider refused the credentials in the config."""
 
     error = "provider_auth_failed"
 
@@ -36,15 +36,16 @@ class ProviderUnavailable(SendError):
     retryable = True
 
 
-class EgressRefused(SendError):
-    """The request points at a host this deployment doesn't allow (EGRESS_ALLOWED_HOSTS)."""
-
-    status = 403
-    error = "host_not_allowed"
-
-
 class NotPermitted(SendError):
     """The request asks for something this deployment has turned off."""
 
     status = 403
     error = "not_permitted"
+
+
+class ConfigError(SendError):
+    """The named config doesn't exist for this client, is off, is the wrong
+    kind, or can't be read -- a setup problem, not the provider's."""
+
+    status = 400
+    error = "bad_config"

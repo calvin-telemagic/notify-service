@@ -1,8 +1,8 @@
 """
 Email through Microsoft Graph (client-credentials token, then
 POST /users/{sender}/sendMail), extracted from otp-service's
-app/graph_mail.py, with the tenant, client and secret coming from each
-request instead of MS_GRAPH_* env vars.
+app/graph_mail.py, with the tenant, client and secret coming from the
+client's stored config instead of MS_GRAPH_* env vars.
 
 Tokens are cached per (tenant, client, secret) until a minute before they
 expire, so a busy caller doesn't fetch one per message. A sendMail answered
@@ -18,7 +18,7 @@ import urllib.parse
 import httpx
 
 from ..errors import ProviderAuthFailed, ProviderRejected, ProviderUnavailable
-from ..models import GraphCredentials, GraphEmail
+from ..models import EmailRequest, GraphConfig
 
 TOKEN_URL = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
 SCOPE = "https://graph.microsoft.com/.default"
@@ -30,7 +30,7 @@ _tokens: dict[str, tuple[str, float]] = {}
 _lock = asyncio.Lock()
 
 
-def _cache_key(creds: GraphCredentials) -> str:
+def _cache_key(creds: GraphConfig) -> str:
     raw = "\0".join((creds.tenant_id, creds.client_id, creds.client_secret.get_secret_value()))
     return hashlib.sha256(raw.encode()).hexdigest()
 
@@ -39,7 +39,7 @@ def clear_cache() -> None:
     _tokens.clear()
 
 
-async def _token(client: httpx.AsyncClient, creds: GraphCredentials, fresh: bool = False) -> str:
+async def _token(client: httpx.AsyncClient, creds: GraphConfig, fresh: bool = False) -> str:
     key = _cache_key(creds)
     async with _lock:
         cached = _tokens.get(key)
@@ -86,7 +86,7 @@ def _graph_error(response: httpx.Response) -> str:
     return f"{response.status_code}"
 
 
-def message_payload(req: GraphEmail) -> dict:
+def message_payload(cfg: GraphConfig, req: EmailRequest) -> dict:
     # Graph carries one body; HTML when the caller gave both.
     body = {"contentType": "HTML", "content": req.html} if req.html else {"contentType": "Text", "content": req.text}
     message = {
@@ -94,15 +94,16 @@ def message_payload(req: GraphEmail) -> dict:
         "body": body,
         "toRecipients": [{"emailAddress": {"address": to}} for to in req.to],
     }
-    if req.reply_to:
-        message["replyTo"] = [{"emailAddress": {"address": req.reply_to}}]
+    reply_to = req.reply_to or cfg.reply_to
+    if reply_to:
+        message["replyTo"] = [{"emailAddress": {"address": reply_to}}]
     return {"message": message, "saveToSentItems": False}
 
 
-async def send(client: httpx.AsyncClient, req: GraphEmail) -> None:
-    creds = req.credentials
+async def send(client: httpx.AsyncClient, cfg: GraphConfig, req: EmailRequest) -> None:
+    creds = cfg
     url = f"{GRAPH_URL}/users/{urllib.parse.quote(creds.sender, safe='')}/sendMail"
-    payload = message_payload(req)
+    payload = message_payload(cfg, req)
     for attempt in range(2):
         token = await _token(client, creds, fresh=attempt > 0)
         try:

@@ -1,9 +1,9 @@
 """
 Email over SMTP, extracted from telemagic-utils' com.pti.utils.EmailSender
 (jakarta.mail: TLS on 465, STARTTLS on 587, a login, an HTML body), with the
-host and login coming from each request.
+host, login and sender coming from the client's stored config.
 
-Unlike EmailSender, the certificate is checked unless the caller sets
+Unlike EmailSender, the certificate is checked unless the config sets
 verify_tls false (EmailSender's trust_host), plaintext ("none") needs
 ALLOW_INSECURE_SMTP, and STARTTLS is required, not opportunistic, so a server
 that doesn't offer it fails the send rather than getting the password in the
@@ -17,19 +17,19 @@ from email.utils import make_msgid
 import aiosmtplib
 
 from ..config import settings
-from ..egress import check_host
 from ..errors import NotPermitted, ProviderAuthFailed, ProviderRejected, ProviderUnavailable
-from ..models import SmtpEmail
+from ..models import EmailRequest, SmtpConfig
 
 
-def build_message(req: SmtpEmail) -> EmailMessage:
+def build_message(cfg: SmtpConfig, req: EmailRequest) -> EmailMessage:
     msg = EmailMessage()
-    msg["From"] = req.from_
+    msg["From"] = cfg.from_
     msg["To"] = ", ".join(req.to)
     msg["Subject"] = req.subject
-    if req.reply_to:
-        msg["Reply-To"] = req.reply_to
-    domain = req.from_.rsplit("@", 1)[-1].strip(" >")
+    reply_to = req.reply_to or cfg.reply_to
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    domain = cfg.from_.rsplit("@", 1)[-1].strip(" >")
     msg["Message-ID"] = make_msgid(domain=domain)
     if req.text:
         msg.set_content(req.text)
@@ -48,15 +48,14 @@ def _tls_context(verify: bool) -> ssl.SSLContext:
     return context
 
 
-async def send(req: SmtpEmail, timeout: float) -> tuple[str, list[str]]:
+async def send(cfg: SmtpConfig, req: EmailRequest, timeout: float) -> tuple[str, list[str]]:
     """The Message-ID, and any recipients the server refused while taking the rest."""
-    creds = req.credentials
+    creds = cfg
     security = creds.effective_security
     if security == "none" and not settings.allow_insecure_smtp:
         raise NotPermitted("SMTP without TLS is turned off here (ALLOW_INSECURE_SMTP)")
-    check_host(creds.host)
 
-    msg = build_message(req)
+    msg = build_message(cfg, req)
     context = _tls_context(creds.verify_tls)
     smtp = aiosmtplib.SMTP(
         hostname=creds.host,
