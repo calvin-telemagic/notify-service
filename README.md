@@ -22,7 +22,7 @@ docker compose exec notify-service python -m app.admin key create securevoice --
 
 docker compose exec -T notify-service python -m app.admin config set securevoice securevoice-sms <<'JSON'
 {"provider": "jasmin", "base_url": "http://jasmin:1401", "username": "...", "password": "...",
- "from_numbers": ["16606009000"], "route": "inteliquent"}
+ "from_numbers": ["16606009000"]}
 JSON
 
 docker compose exec -T notify-service python -m app.admin config set securevoice securevoice-email <<'JSON'
@@ -44,7 +44,7 @@ The provider config fields:
 
 | Provider | Fields |
 |---|---|
-| `jasmin` | `base_url`, `username`, `password`, `from_numbers`, `route`?, `dlr_level` (2 = carrier's final status, the default; 3 = also SMSC acks) |
+| `jasmin` | `base_url`, `username`, `password`, `from_numbers`, `dlr_level` (2 = carrier's final status, the default; 3 = also SMSC acks). There's no per-message route: Jasmin's MT router picks the connector, so set an MT route for the Jasmin user if it needs a particular one. |
 | `inteliquent` | `token`, `from_numbers`, `base_url`? |
 | `graph` | `tenant_id`, `client_id`, `client_secret`, `sender`, `reply_to`? |
 | `smtp` | `host`, `port` (587), `username`?, `password`?, `security` (`tls` on 465, `starttls` otherwise; `none` needs `ALLOW_INSECURE_SMTP`), `verify_tls` (true), `from`, `reply_to`? |

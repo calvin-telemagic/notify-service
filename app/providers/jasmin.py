@@ -15,6 +15,11 @@ service's httpx logger is held at WARNING so the URL is never logged.
 Delivery receipts: with a dlr_url, Jasmin POSTs the receipt there (level 2:
 the terminal status from the carrier); app/main.py's /dlr/jasmin route
 records it. STATUS_MAP is messaging's services/dlr_status.py.
+
+There's no per-message route: Jasmin's MT router picks the SMPP connector
+(configure it in Jasmin, e.g. an MT route for the config's Jasmin user).
+messaging passes an optional "route" query parameter that no caller sets and
+Jasmin's HTTP API doesn't document; it isn't carried over.
 """
 
 import re
@@ -71,8 +76,6 @@ async def send(client: httpx.AsyncClient, cfg: JasminConfig, *, sender: str, to:
         "to": to,
         **content_params(body),
     }
-    if cfg.route:
-        params["route"] = cfg.route
     if dlr_url:
         params |= {"dlr": "yes", "dlr-url": dlr_url, "dlr-level": cfg.dlr_level, "dlr-method": "POST"}
 

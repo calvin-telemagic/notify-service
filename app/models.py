@@ -71,7 +71,6 @@ class JasminConfig(_Strict):
     username: SecretStr
     password: SecretStr
     from_numbers: _Numbers
-    route: str | None = Field(default=None, max_length=64)
     dlr_level: Literal[2, 3] = 2
 
 

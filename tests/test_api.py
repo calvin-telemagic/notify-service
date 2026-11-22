@@ -112,3 +112,11 @@ def test_admin_cli_reads_config_from_stdin(h, database_url):
     run = subprocess.run([sys.executable, "-m", "app.admin", "config", "list", "sv"],
                          env=env, capture_output=True, text=True, timeout=60)
     assert "t0ken" not in run.stdout and "cli-sms" in run.stdout
+
+
+def test_jasmin_configs_take_no_route(h):
+    import pytest
+    from tests.conftest import JASMIN_CFG
+    with pytest.raises(admin.AdminError) as exc:
+        h.call(admin.config_set, "sv", "routed", {**JASMIN_CFG, "route": "inteliquent"})
+    assert "route" in str(exc.value)

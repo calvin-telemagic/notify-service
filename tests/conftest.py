@@ -92,7 +92,7 @@ class Harness:
 
 
 JASMIN_CFG = {"provider": "jasmin", "base_url": "http://jasmin.internal:1401", "username": "tm",
-              "password": "s3cret-pw", "from_numbers": ["16606009000"], "route": "inteliquent"}
+              "password": "s3cret-pw", "from_numbers": ["16606009000"]}
 INTELIQUENT_CFG = {"provider": "inteliquent", "token": "bearer-tok", "from_numbers": ["+16606009000"]}
 GRAPH_CFG = {"provider": "graph", "tenant_id": "tenant-1", "client_id": "client-1",
              "client_secret": "graph-secret", "sender": "noreply@telemagic.app"}

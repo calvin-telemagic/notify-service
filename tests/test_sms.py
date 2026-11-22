@@ -24,7 +24,7 @@ def test_jasmin_send_is_logged_with_its_client(h):
     dlr_url = f"http://notify.internal:8010/dlr/jasmin/{out['id']}/{vault.dlr_token(out['id'])}"
     assert params == {
         "username": "tm", "password": "s3cret-pw", "from": "16606009000", "to": "+15551234567",
-        "content": "Your code is 123456", "route": "inteliquent",
+        "content": "Your code is 123456",
         "dlr": "yes", "dlr-url": dlr_url, "dlr-level": "2", "dlr-method": "POST",
     }
     row = h.sql("SELECT * FROM messages")[0]

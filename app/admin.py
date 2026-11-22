@@ -18,7 +18,7 @@ Manage notify-service's clients, API keys and provider configs.
 config set examples (one JSON object on stdin):
 
   {"provider": "jasmin", "base_url": "http://jasmin:1401", "username": "sv", "password": "...",
-   "from_numbers": ["16606009000"], "route": "inteliquent"}
+   "from_numbers": ["16606009000"]}
   {"provider": "inteliquent", "token": "...", "from_numbers": ["16606009000"]}
   {"provider": "graph", "tenant_id": "...", "client_id": "...", "client_secret": "...",
    "sender": "noreply@telemagic.app"}
