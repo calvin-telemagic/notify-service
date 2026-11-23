@@ -133,7 +133,8 @@ docker compose up -d --build            # the image build runs the tests against
 
 Callers on the same host reach the service in either of two ways:
 
-- **Containers** join the `notify` Docker network and use `http://notify-service:8000`. PQTutela's relay does this through pqtutela's `docker-compose.notify.yml`.
+- **Containers** join the `notify_net` Docker network (created by this project) and use `http://notify-service:8000`. PQTutela's relay lists it as an external network in its `docker-compose.yml`.
+- **Sharing another stack's Postgres** instead of `notify-db`: copy `docker-compose.override.example.yml` to `docker-compose.override.yml` (gitignored) and see the comments there.
 - **Host processes** use `http://127.0.0.1:8010`.
 
 The tests run against real Postgres: `TEST_DATABASE_URL`, or a throwaway cluster from a local `initdb`. They mock Jasmin, Inteliquent and Graph with respx, and run real SMTP against aiosmtpd. `docker build --target test .` runs them.

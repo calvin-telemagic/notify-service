@@ -45,16 +45,16 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    # Callers in other compose projects on this host join "notify" and reach
+    # Callers in other compose projects on this host join "notify_net" and reach
     # the service as http://notify-service:8000.
     networks:
       - internal
-      - notify
+      - notify_net
 
 volumes:
   notify-db:
 
 networks:
   internal:
-  notify:
-    name: notify
+  notify_net:
+    name: notify_net

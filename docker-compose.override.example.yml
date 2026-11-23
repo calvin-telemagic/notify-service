@@ -1,0 +1,22 @@
+# Use another stack's Postgres instead of notify-db, e.g. PQTutela's "db".
+# Copy to docker-compose.override.yml (gitignored); Compose reads it
+# automatically. Then start only the service: docker compose up -d notify-service
+#
+# First, in that Postgres (once):
+#   CREATE ROLE notify LOGIN PASSWORD '...';
+#   CREATE DATABASE notify OWNER notify;
+# notify-service creates its tables itself on start.
+#
+# pqtutela_db_net is created by PQTutela's compose project (only its db is on
+# it), so start PQTutela's db first: docker compose up -d db
+services:
+  notify-service:
+    environment:
+      DATABASE_URL: "postgresql://notify:${NOTIFY_DB_PASSWORD}@db:5432/notify"
+    depends_on: !reset {}
+    networks: !override [notify_net, pqtutela_db_net]
+
+networks:
+  pqtutela_db_net:
+    name: pqtutela_db_net
+    external: true
