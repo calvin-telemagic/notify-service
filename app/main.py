@@ -1,6 +1,6 @@
 """
 notify-service: one place that sends texts and emails for any TeleMagic or
-SecureVoice service, and one log of everything sent.
+PQTutela service, and one log of everything sent.
 
 Clients, their API keys and their provider configs live in notify-service's
 database (managed with `python -m app.admin`). A caller authenticates with

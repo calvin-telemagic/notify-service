@@ -23,7 +23,7 @@ config set examples (one JSON object on stdin):
   {"provider": "graph", "tenant_id": "...", "client_id": "...", "client_secret": "...",
    "sender": "noreply@telemagic.app"}
   {"provider": "smtp", "host": "smtp.office365.com", "port": 587, "username": "...", "password": "...",
-   "from": "SecureVoice <noreply@pqtutela.telemagic.app>"}
+   "from": "PQTutela <noreply@pqtutela.telemagic.app>"}
 """
 
 import argparse

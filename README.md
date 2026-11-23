@@ -1,6 +1,6 @@
 # notify-service
 
-One internal service that sends texts and emails for every TeleMagic or SecureVoice service, and keeps **one log of everything sent**.
+One internal service that sends texts and emails for every TeleMagic or PQTutela service, and keeps **one log of everything sent**.
 
 Clients, their API keys and their provider configs (credentials and sender numbers or addresses) live in notify-service's own Postgres. A caller authenticates with its key, names one of its configs, and gets back the message's id. Every send is logged with the client that made it, and Jasmin delivery receipts are recorded on the same row. Callers don't handle provider credentials and don't write their own logs.
 
@@ -16,16 +16,16 @@ The sending code comes from TeleMagic's existing services:
 ## Setting up a client
 
 ```bash
-docker compose exec notify-service python -m app.admin client add securevoice --description "SecureVoice relay"
-docker compose exec notify-service python -m app.admin key create securevoice --label relay
+docker compose exec notify-service python -m app.admin client add pqtutela --description "PQTutela relay"
+docker compose exec notify-service python -m app.admin key create pqtutela --label relay
 #  -> prints the key once (nsk_...). Put it in the client's secrets.
 
-docker compose exec -T notify-service python -m app.admin config set securevoice securevoice-sms <<'JSON'
+docker compose exec -T notify-service python -m app.admin config set pqtutela pqtutela-sms <<'JSON'
 {"provider": "jasmin", "base_url": "http://jasmin:1401", "username": "...", "password": "...",
  "from_numbers": ["16606009000"]}
 JSON
 
-docker compose exec -T notify-service python -m app.admin config set securevoice securevoice-email <<'JSON'
+docker compose exec -T notify-service python -m app.admin config set pqtutela pqtutela-email <<'JSON'
 {"provider": "graph", "tenant_id": "...", "client_id": "...", "client_secret": "...",
  "sender": "noreply@pqtutela.telemagic.app"}
 JSON
@@ -56,7 +56,7 @@ Every call except `/healthz` and the receipt route needs `Authorization: Bearer 
 ### `POST /v1/sms`
 
 ```json
-{"config": "securevoice-sms", "to": "+15551234567", "body": "Your code is 123456",
+{"config": "pqtutela-sms", "to": "+15551234567", "body": "Your code is 123456",
  "sensitive": true, "reference": "signup-abc"}
 ```
 
@@ -68,7 +68,7 @@ Every call except `/healthz` and the receipt route needs `Authorization: Bearer 
 ### `POST /v1/email`
 
 ```json
-{"config": "securevoice-email", "to": ["alice@example.com"], "subject": "Your code",
+{"config": "pqtutela-email", "to": ["alice@example.com"], "subject": "Your code",
  "html": "<p>Your code is <b>123456</b></p>", "text": "Your code is 123456", "sensitive": true}
 ```
 
@@ -133,7 +133,7 @@ docker compose up -d --build            # the image build runs the tests against
 
 Callers on the same host reach the service in either of two ways:
 
-- **Containers** join the `notify` Docker network and use `http://notify-service:8000`. SecureVoice's relay does this through pqtutela's `docker-compose.notify.yml`.
+- **Containers** join the `notify` Docker network and use `http://notify-service:8000`. PQTutela's relay does this through pqtutela's `docker-compose.notify.yml`.
 - **Host processes** use `http://127.0.0.1:8010`.
 
 The tests run against real Postgres: `TEST_DATABASE_URL`, or a throwaway cluster from a local `initdb`. They mock Jasmin, Inteliquent and Graph with respx, and run real SMTP against aiosmtpd. `docker build --target test .` runs them.

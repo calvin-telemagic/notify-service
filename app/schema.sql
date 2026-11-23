@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 CREATE INDEX IF NOT EXISTS api_keys_client_idx ON api_keys (client_id);
 
--- A client's named provider setups ("securevoice-sms"). settings is the
+-- A client's named provider setups ("pqtutela-sms"). settings is the
 -- provider's JSON (credentials, sender numbers / address), AES-256-GCM
 -- encrypted with CONFIG_ENCRYPTION_KEY (app/vault.py).
 CREATE TABLE IF NOT EXISTS provider_configs (

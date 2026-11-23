@@ -2,7 +2,7 @@
 Request/response bodies, and the provider configs stored per client.
 
 Callers no longer send credentials: a request names one of its client's
-configs ("securevoice-sms"), and the config -- kept encrypted in the
+configs ("pqtutela-sms"), and the config -- kept encrypted in the
 database, managed with app/admin.py -- holds the provider, its credentials
 and the sender(s).
 """
